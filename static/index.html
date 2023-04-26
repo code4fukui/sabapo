@@ -1,0 +1,14 @@
+<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><link rel="icon" href="data:">
+</head><body>
+<h1>SSE test</h1>
+<main id=main></main>
+<hr>
+<a href=https://github.com/code4fukui/sse-test/>SSE test on Deno</a>
+
+<script type="module">
+const source = new EventSource("/api/sse");
+source.onmessage = e => {
+  console.log(e);
+  main.innerHTML += e.data + "<br>";
+};
+</script>
