@@ -1,6 +1,6 @@
-# SSE test on Deno
+# local point system with SSE
 
-a test of [Server-sent events](https://developer.mozilla.org/ja/docs/Web/API/Server-sent_events) on Deno
+A local point system with SSE([Server-sent events](https://developer.mozilla.org/ja/docs/Web/API/Server-sent_events)) on Deno
 
 ## Usage
 
@@ -11,3 +11,7 @@ a test of [Server-sent events](https://developer.mozilla.org/ja/docs/Web/API/Ser
 deno run -A server.js
 ```
 3. open [http://localhost:8001/](http://localhost:8001/) on your browser
+
+## based on
+
+- [SSE test on Deno](https://github.com/code4fukui/sse-test)

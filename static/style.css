@@ -1,0 +1,30 @@
+body {
+  box-sizing: border-box;
+  text-align: center;
+  font-family: sans-serif;
+}
+input {
+  font-size: 20px;
+  width: 8em;
+}
+#divid {
+  padding: .3em;
+}
+#divpoint {
+  font-size: 180%;
+  font-weight: bold;
+  text-align: center;
+}
+#divqr {
+  margin: .5em;
+}
+#divui {
+  border: 1px solid black;
+  margin: .3em;
+  padding: 1em .3em;
+}
+#talog {
+  display: inline-block;
+  width: 90%;
+  height: 8em;
+}

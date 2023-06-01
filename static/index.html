@@ -1,14 +1,121 @@
 <!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><link rel="icon" href="data:">
+<title>さばぽ - local point system</title>
+<link rel="stylesheet" href="style.css">
 </head><body>
-<h1>SSE test</h1>
-<main id=main></main>
-<hr>
-<a href=https://github.com/code4fukui/sse-test/>SSE test on Deno</a>
+
+<h1>さばぽ</h1>
+<main id=main>
+<div id=divpoint></div>
+
+<div id=divui>
+<div id=divid></div>
+<input id=inpoint>
+<button id=btn>あげる</button>
+<div id=divqr></div>
+
+<script type="module" src="https://code4fukui.github.io/qr-code-reader/qr-code-reader.js"></script>
+<qr-code-reader id=qrr></qr-code-reader><br>
+
+<textarea id=talog></textarea><br>
+
+<button id=btnreset>リセット</button>
+
+</div>
+
+</main>
+
+<a href=https://github.com/code4fukui/sabapo/>src on Deno</a>
 
 <script type="module">
-const source = new EventSource("/api/sse");
-source.onmessage = e => {
-  console.log(e);
-  main.innerHTML += e.data + "<br>";
+import { QRCode } from "https://js.sabae.cc/QRCode.js";
+import { Base32 } from "https://code4fukui.github.io/Base32/Base32.js";
+import { getRandomValue } from "https://js.sabae.cc/getRandomValue.js";
+
+const initialpoint = 1000;
+
+const idlen = 32;
+const formatID = (id) => id.substring(0, 4);
+
+let id = localStorage.getItem("id");
+if (!id || location.hash == "#reset") {
+  const ar = new Uint8Array(idlen);
+  getRandomValue(ar);
+  id = Base32.encode(ar);
+  localStorage.setItem("id", id);
+}
+divid.textContent = "ID: " + formatID(id);
+
+let point = localStorage.getItem("point"); // consoleでいじり放題！
+if (!point || isNaN(point)) {
+  point = initialpoint;
+  localStorage.setItem("point", point);
+}
+point = parseInt(point);
+
+divpoint.textContent = point;
+
+let esrc = null;
+btn.onclick = () => {
+  if (!inpoint.value) {
+    alert("あげるポイントが設定されていません");
+    return;
+  }
+  if (esrc) {
+    esrc.close();
+  }
+  const putp = inpoint.value;
+  const param = id + "," + putp;
+  divqr.innerHTML = "";
+  divqr.appendChild(new QRCode(param));
+  const path = "/api/wait?" + param;
+  console.log("path", path);
+  esrc = new EventSource(path);
+  esrc.onmessage = e => {
+    esrc.close();
+    esrc = null;
+    console.log(e);
+    const data = JSON.parse(e.data);
+    //main.innerHTML += e.data + "<br>";
+    talog.value += formatID(data.id) + " へ " + data.point + "ポイントあげた\n";
+    divqr.innerHTML = "";
+    inpoint.value = "";
+    point -= parseInt(data.point);
+    divpoint.textContent = point;
+    localStorage.setItem("point", point);
+  };
+  divqr.onclick = () => {
+    divqr.innerHTML = "";
+    esrc.close();
+    esrc = null;
+  };
+};
+qrr.oninput = async (e) => {
+  qrr.stop();
+  const param = e.data;
+  console.log(param);
+  const res = await (await fetch("/api/accept?" + param)).json();
+  console.log(res);
+  const [id, dpoint] = param.split(",");
+  talog.value += formatID(id) + " から " + dpoint + "ポイントもらった\n";
+  point += parseInt(dpoint);
+  divpoint.textContent = point;
+  localStorage.setItem("point", point);
+};
+
+btnreset.onclick = () => {
+  if (!confirm("ポイントを初期化しますか？")) {
+    return;
+  }
+  const n = prompt("初期ポイントを入力してください", initialpoint);
+  if (n === null) {
+    return;
+  }
+  console.log(n);
+  point = n;
+  localStorage.setItem("point", point);
+  divpoint.textContent = point;
 };
 </script>
+
+
+</body></html>

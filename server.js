@@ -5,26 +5,38 @@ import {
 import { serve } from "https://deno.land/std@0.184.0/http/server.ts";
 import { serveDir } from "https://deno.land/std@0.184.0/http/file_server.ts";
 
-await serve((req, connInfo) => {
-  const path = new URL(req.url).pathname;
-  if (path.startsWith("/api/sse")) {
-    const target = new ServerSentEventStreamTarget();
-    let counter = 1;
+const port = Deno.args[0] || 8001;
+const ipv6 = true;
+const hostname = ipv6 ? "[::]" : "0.0.0.0";
 
-    const id = setInterval(() => {
-      const evt = new ServerSentEvent(
-        "message",
-        { data: { counter }, id: counter}, // id -> e.lastEventId
-      );
-      counter++;
-      target.dispatchEvent(evt);
-    }, 1000);
-    console.log("start", id);
+const targets = {};
+
+await serve(async (req, connInfo) => {
+  const url = new URL(req.url);
+  const path = url.pathname;
+  if (path.startsWith("/api/wait")) {
+    const [id, point] = url.search.substring(1).split(",");
+    const target = new ServerSentEventStreamTarget();
+    targets[id] = target;
     target.addEventListener("close", () => {
-      console.log("close", id, counter);
-      clearInterval(id);
+      console.log("close", id);
+      delete target[id];
     });
     return target.asResponse();
+  } else if (path.startsWith("/api/accept")) {
+    const [id, point] = url.search.substring(1).split(",");
+    const target = targets[id];
+    if (target) {
+      const evt = new ServerSentEvent(
+        "message",
+        { data: { id, point }, id}, // id -> e.lastEventId
+      );
+      target.dispatchEvent(evt);
+      await target.close();
+      delete targets[id];
+      return new Response("1");
+    }
+    return new Response("0");
   }
   return serveDir(req, { fsRoot: "static/" });
-}, { port: 8001 });
+}, { hostname, port });
